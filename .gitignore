@@ -1,0 +1,12 @@
+private/
+.env
+.env.local
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.db
+*.sqlite3
+*.log
+data/
+cache/
