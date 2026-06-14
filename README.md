@@ -26,6 +26,8 @@ These Markdown files are part of the project operating system and must stay curr
 - `logs.md`
 - `ASSISTANTS.md`
 
+`specs.md` also contains the Phase 0 Software Design Document, capturing the foundation architecture, data model, interface contracts, workflows, and validation plan.
+
 ## Private Context
 
 Private notes live under `private/` and are intentionally excluded from git. They can contain:

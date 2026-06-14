@@ -30,6 +30,16 @@ Assistants and contributors should:
 - update them when the project changes materially
 - avoid letting code diverge from documented intent for long periods
 
+## Prompt Completion Summary
+
+Every work update or task summary should explicitly include:
+
+- what was completed,
+- what is pending for the current phase,
+- an overview of the changes made.
+
+This summary style should be reflected in project documentation, issue updates, and assistant responses to keep progress clear and traceable.
+
 ## Change Discipline
 
 - prefer small, reviewable increments

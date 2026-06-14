@@ -21,12 +21,108 @@ Includes:
 - default production stack
 - LangChain and LangGraph learning goals
 
+### Phase 0 SDD Foundation
+
+This section defines the Phase 0 Software Design Document for internal developer use. It captures the foundation design before implementation begins, with explicit system scope, architecture boundaries, data model intent, interface contracts, workflow expectations, and verification strategy.
+
+#### System Overview
+
+- Purpose: create a production-grade scholarly research platform built around OpenAlex, with LangChain-based ingestion and retrieval, early LangGraph workflows, and a strong boundary between public repo artifacts and local private notes.
+- Scope:
+  - define system intent and design principles
+  - identify the first research domain slice: AI Reliability
+  - establish the core architecture and stack choices
+  - capture project-level non-functional requirements and validation goals
+- Out of scope for Phase 0:
+  - detailed ingestion implementation
+  - concrete API production code
+  - deployment automation beyond local development assumptions
+
+#### Functional Requirements
+
+- Define OpenAlex ingestion flow concepts, including work, author, topic, and citation metadata.
+- Define LangChain-compatible document abstractions for scholarly records and local notes.
+- Define retrieval behavior for search, filtering, citation-aware results, and semantic similarity.
+- Define the first LangGraph research workflow shape: question, evidence retrieval, citation inspection, synthesis, grounding validation, and cited response.
+- Define private note handling and the boundary between public and local-only data.
+
+#### Non-functional Requirements
+
+- The design must support testability through manual and automated checks.
+- The foundation must support observability for API requests, ingestion runs, LangChain calls, workflow transitions, and evaluation history.
+- The system must be designed to keep private notes out of git and prevent accidental public export.
+- The architecture must be modular and extensible for later phases.
+
+#### Architecture and Component Boundaries
+
+- Define the main components:
+  - API/service layer
+  - ingestion service
+  - retrieval/search service
+  - LangGraph workflow service
+  - evaluation service
+  - observability/logging service
+  - private note indexer
+- Define boundaries between public and private content.
+- Define a LangChain-first path for AI workflows, with small adapters for raw provider access only when needed.
+- Define where LangGraph enters the architecture: after retrieval has matured enough to support a meaningful research workflow.
+
+#### Data Model and Storage Concepts
+
+- Identify required entity types:
+  - OpenAlex works, authors, sources, topics, citations
+  - local documents and document chunks
+  - embeddings and retrieval metadata
+  - evaluation runs and workflow records
+- Specify storage strategy:
+  - PostgreSQL for structured metadata
+  - `pgvector` for embeddings and semantic retrieval
+  - local file storage for cached payloads and private notes
+- Define provenance metadata for ingested records and local caches.
+
+#### Interface and Contract Definitions
+
+- Define contract expectations for:
+  - OpenAlex ingestion adapters
+  - LangChain document loaders / retrievers
+  - LangGraph workflow states and transitions
+  - API request/response shape for future workflows
+  - privacy gating for private note inclusion
+- Capture contract-level requirements rather than full implementation signatures where appropriate.
+
+#### Workflow Definitions
+
+- Ingestion workflow: query OpenAlex, normalize entities, store structured records, cache raw payloads.
+- Retrieval workflow: build LangChain-compatible retriever, support metadata filters, return evidence with citations.
+- Research workflow: accept question, retrieve evidence, inspect sources, synthesize answer, validate grounding.
+- Evaluation workflow: define metrics and test scenarios for retrieval quality, grounding, and private note exclusion.
+- Observability workflow: capture request IDs, execution metadata, errors, and trace information.
+
+#### Validation and Testing Plan
+
+- Document manual test scripts for ingestion, retrieval, workflow execution, private note exclusion, and observability.
+- Document automated test areas for schema contracts, ingestion idempotency, retrieval filters, vector storage, workflow transitions, and evaluation metrics.
+- Define success criteria for Phase 0 documentation and design readiness.
+
+#### Public / Private Boundary and Git Exclusion
+
+- The Phase 0 SDD must include explicit rules for private notes and excluded content.
+- Private notes should be kept inside `private/` and excluded from git.
+- Public docs should summarize architectural choices and design intent without exposing private learning materials.
+- `.gitignore` rules must be validated as part of Phase 0.
+
+#### Verification
+
+- Confirm `specs.md` contains the Phase 0 SDD section with all subsections.
+- Confirm the design section references existing root docs and preserves the repo’s foundation principles.
+- Confirm `task.md` includes a Phase 0 SDD task for documentation and verification.
+
 ## 001 OpenAlex Ingestion Foundation
 
 Status: planned
 
 Goal:
-Define how the system queries, stores, normalizes, and refreshes OpenAlex entities relevant to AI Reliability.
+Define how the system queries, stores, normalizes, and refreshes OpenAlex entities relevant to AI Reliability. Includes data model design, SQL schema, and SQLAlchemy ORM mapping.
 
 Includes:
 
@@ -37,6 +133,119 @@ Includes:
 - local caching policy
 - provenance metadata
 - LangChain document mapping
+- Phase 1 data model and SQL schema design
+- SQLAlchemy ORM models for OpenAlex entities
+- timestamps and audit metadata
+
+### Phase 1 Data Model Design
+
+#### Core Entities (OpenAlex Focus)
+
+- **works**: scholarly articles, papers, preprints (OpenAlex work entity)
+- **authors**: scholars and contributors (OpenAlex author entity)
+- **topics**: research areas and concepts (OpenAlex topic entity)
+- **sources**: journals, conferences, publishers (OpenAlex source entity)
+- **citations**: work-to-work citation relationships
+- **works_authors**: junction table for many-to-many work-author relationships
+- **works_topics**: junction table for many-to-many work-topic relationships
+
+#### Observability and Audit Entities
+
+- **ingestion_runs**: track OpenAlex API queries and ingestion batches
+- **api_logs**: structured logs for API requests, errors, and performance
+- **ingestion_errors**: failed ingestion records for retry logic
+
+#### Metadata and Timestamps
+
+All entities include:
+
+- `created_at`: record creation timestamp
+- `updated_at`: last modification timestamp
+- `source_id`: identifier from OpenAlex API (to avoid duplicates)
+- `raw_payload`: optional JSON cache of original API response
+
+#### Phase 1 Scope
+
+Phase 1 focuses on OpenAlex entities only. Local documents, chunks, embeddings, and evaluation records are deferred to Phase 2+.
+
+### SQL Schema Design (Learning Exercise)
+
+You will:
+
+1. Design the SQL schema for Phase 1 entities (works, authors, topics, sources, citations).
+2. Define relationships and constraints.
+3. Plan indexes for ingestion and future retrieval queries.
+4. Then implement as SQLAlchemy ORM models.
+
+### SQLAlchemy ORM Mapping
+
+After schema design, you will:
+
+1. Create Pydantic models for validation and contracts.
+2. Define SQLAlchemy declarative models with relationships.
+3. Learn about session management and query patterns.
+
+### CI/CD for Phase 1
+
+From the start, plan:
+
+1. Schema migrations using Alembic.
+2. Local testing with pytest in the same PostgreSQL-oriented environment used by development.
+3. Database reset scripts for development.
+4. Schema versioning and rollback strategy.
+
+#### Delivery Order
+
+For this project, CI/CD should be introduced in two layers:
+
+1. **Docker first in Phase 1**:
+   - containerize PostgreSQL and the application runtime for consistent local development
+   - use Docker Compose or an equivalent local orchestration setup
+   - make migrations and one-work ingestion runnable inside the same environment the tests will use later
+2. **CI second once ingestion is testable**:
+   - add GitHub Actions only after the repository has
+     - working Dockerized local development,
+     - applied Alembic migrations,
+     - at least one ingestion-focused automated test,
+     - basic lint / import verification worth enforcing in pull requests
+
+This order keeps CI meaningful. The pipeline should validate real project behavior, not just an empty scaffold.
+
+## 001.1 CI/CD Pipeline Foundation
+
+Status: planned
+
+Goal:
+Establish continuous integration and deployment practices from Phase 1. Includes local development automation, testing, and deployment readiness.
+
+Includes:
+
+- GitHub Actions workflow setup
+- automated schema migration testing
+- pytest integration
+- linting and type checking (ruff, mypy)
+- database initialization and cleanup
+- environment configuration (.env.example)
+- Docker containerization for consistency
+- local development task automation
+- deployment pre-flight checks
+
+#### Phase 1 CI/CD Scope
+
+- Local development: Dockerized PostgreSQL, pytest, linting, type checks
+- Schema migration testing with Alembic
+- Environment management (.env, .env.local exclusion)
+- GitHub Actions workflow for PR validation after the first ingestion tests exist
+- Database setup and reset automation
+
+#### CI/CD Learning Goals
+
+You will:
+
+1. Understand pytest fixtures for database isolation
+2. Learn Alembic for schema versioning
+3. Practice environment management and secrets handling
+4. Build reusable GitHub Actions workflows
 
 ## 002 LangChain Retrieval
 

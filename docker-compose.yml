@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: openalex-research-atlas-postgres
+    environment:
+      POSTGRES_DB: openalex_research
+      POSTGRES_USER: openalex_user
+      POSTGRES_PASSWORD: openalex_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openalex_user -d openalex_research"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

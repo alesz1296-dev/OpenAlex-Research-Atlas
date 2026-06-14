@@ -185,6 +185,10 @@ The assistant must:
 - Never delete branches automatically.
 - Always ask for approval before any git write operation.
 - Explain proposed git actions before executing them.
+- Always conclude task updates with:
+  - what was completed,
+  - what is pending for the current phase,
+  - an overview of the changes made.
 
 Git commands that require explicit approval:
 

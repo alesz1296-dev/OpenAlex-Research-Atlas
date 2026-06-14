@@ -20,10 +20,25 @@ Deliverables:
 - AI Reliability domain slice
 - manual and automated testing standard
 
+Scope:
+
+- Document project intent, architecture, and development rules.
+- Define the default stack and AI Reliability research slice.
+- Establish public/private note boundaries and git exclusion rules.
+- Set the LangChain-first plus LangGraph-early project approach.
+- Capture manual and automated testing standards early.
+- Keep project docs as the source of truth for phase planning.
+- Record the Phase 0 Software Design Document in `specs.md`.
+
 ## Phase 1: LangChain OpenAlex Ingestion
 
 Goal:
 Use LangChain-compatible document abstractions while ingesting AI Reliability works from OpenAlex.
+
+Operational sequencing for this phase:
+
+- Start with Dockerized local development for PostgreSQL and the application runtime.
+- Add CI after one-work ingestion, Alembic migrations, and the first ingestion-focused tests are stable enough to enforce in pull requests.
 
 ## Phase 2: LangChain Retrieval Core
 

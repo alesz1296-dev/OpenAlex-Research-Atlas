@@ -168,6 +168,8 @@ Observability must cover:
 
 Project foundation, specification system, LangChain-first architecture, logging, and private/public boundaries.
 
+The Phase 0 Software Design Document is defined in `specs.md` and defines the foundation architecture, data model concepts, interface contracts, workflow expectations, and validation strategy.
+
 ### Phase 1
 
 LangChain OpenAlex ingestion and database modeling.
