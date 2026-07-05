@@ -175,6 +175,37 @@
 - Clarified that CI/CD should be implemented gradually rather than as a single late phase.
 - Updated Phase 1 to introduce the first CI checkpoint for lint, compile/import, PostgreSQL, Alembic, and ingestion tests.
 - Added CI/CD maturity notes to Phases 2-8 so retrieval, workflow, evaluation, observability, Kubernetes, Argo CD, and Terraform checks are added when those capabilities exist.
+
+## 2026-07-05 - Phase 1 CI checkpoint added
+
+- Added the first GitHub Actions workflow at `.github/workflows/phase1-ci.yml`.
+- The workflow now runs on pushes and pull requests with:
+  - PostgreSQL 16 service container
+  - `ruff check .`
+  - `python -m compileall src scripts tests alembic`
+  - import smoke checks for API, ingestion, AI, and evaluation modules
+  - `alembic upgrade head`
+  - `pytest -q`
+- Marked the Phase 1 CI checkpoint task as complete in `task.md`.
+
+## 2026-07-05 - Phase 1 architecture ownership tightened
+
+- Refactored `POST /works` to delegate to `OpenAlexIngestionService` instead of writing `Work` rows directly from the route.
+- Kept `POST /ingestion/works` as the explicit ingestion endpoint while making `POST /works` an ingestion-aligned alias rather than a second persistence owner.
+- Migrated PostgreSQL test setup away from `Base.metadata.create_all()` and toward Alembic-owned schema setup using `upgrade head` / `downgrade base`.
+- Added an API test that proves `POST /works` delegates to the ingestion service contract.
+
+## 2026-07-05 - Phase 1 disposable test database validation
+
+- Added a dedicated `postgres_test` Docker Compose service for local PostgreSQL tests.
+- Updated `.env.example` and `src/ingestion/manual_test.md` so local `TEST_DATABASE_URL` uses `localhost:5433/openalex_research_test` instead of the development database.
+- Added a pytest guard that skips destructive PostgreSQL integration tests in local development when `TEST_DATABASE_URL` equals `DATABASE_URL`.
+- Added `ALEMBIC_DATABASE_URL` support in `alembic/env.py` so Alembic-owned test fixtures can target the disposable test database even if application settings were imported earlier.
+- Validation passed:
+  - `ruff check .`
+  - `python -m compileall src scripts tests alembic`
+  - full `pytest -q` against `postgres_test`, with 9 tests passing
+- Phase 1 exit condition reassessment: all documented Phase 1 exit conditions are satisfied.
 - Reframed Phase 9 as CI/CD release gates and promotion rather than initial CI/CD implementation.
 - Updated `README.md`, `specs.md`, `phases.md`, `task.md`, `architecture.md`, and `logs.md`.
 

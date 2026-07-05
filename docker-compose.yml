@@ -32,6 +32,23 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres_test:
+    image: postgres:16
+    container_name: openalex-research-atlas-postgres-test
+    profiles:
+      - test
+    environment:
+      POSTGRES_DB: openalex_research_test
+      POSTGRES_USER: openalex_user
+      POSTGRES_PASSWORD: openalex_password
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openalex_user -d openalex_research_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   prometheus:
     image: prom/prometheus:v2.48.1
     container_name: openalex-research-atlas-prometheus

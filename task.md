@@ -41,16 +41,16 @@ Before a phase is marked complete, confirm:
 - [x] Add Azure OpenAI inference adapter, disabled by default and mockable in tests
 - [x] Add local retrieval evaluation harness with seed dataset
 - [x] Add Prometheus/Grafana local observability wiring
+- [x] Add first GitHub Actions CI checkpoint for Ruff, compile/import checks, Alembic, and pytest
+- [x] Separate local development and test PostgreSQL databases
+- [x] Validate real one-work ingestion and re-ingestion against PostgreSQL
+- [x] Validate local Docker stack for API, PostgreSQL, Prometheus, and Grafana
+- [x] Complete Phase 1 architecture ownership review
 
 ## Next
 
-- Resume with manual validation of Phase 1 using `src/ingestion/manual_test.md`.
-- Add follow-up schema migration for DB defaults/nullability discovered during database review.
-- Test single-work ingestion against a real database.
-- Review one-work upsert behavior against real OpenAlex payloads and adjust any field mappings that are too sparse or too aggressive.
-- Validate Docker-based local development for PostgreSQL, API, Prometheus, and Grafana.
-- Review Phase 1 architecture ownership before exit: API routes, scripts, ingestion service, database schema, and SQL reference should agree.
-- Define and implement the first CI checkpoint: run Ruff, compile/import checks, Alembic migrations, and at least one ingestion-focused pytest test.
+- Note for later phases: if richer author/topic metadata is needed, add explicit enrichment flows that fetch full author/topic endpoints instead of relying only on nested work payload fragments.
+- Phase 1 exit conditions are satisfied; prepare closeout commit and move implementation focus to Phase 2.
 - Define LangChain document mapping for OpenAlex works.
 - Define the first LangGraph research workflow state.
 - Define manual test scripts for ingestion, retrieval, and workflow execution.
@@ -59,7 +59,6 @@ Before a phase is marked complete, confirm:
 ## Later
 
 - Close Phase 1 after successful manual validation and PostgreSQL-backed test execution.
-- Add GitHub Actions after Dockerized local development and the first ingestion tests are stable.
 - Add implementation tickets by spec ID.
 - Add evaluation dataset tasks.
 - Add deployment hardening tasks.

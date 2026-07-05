@@ -36,8 +36,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set SQLAlchemy URL from project settings (env/.env)
-config.set_main_option('sqlalchemy.url', settings.DATABASE_URL)
+# Set SQLAlchemy URL from project settings (env/.env).
+# Tests may set ALEMBIC_DATABASE_URL so migration-owned fixtures can target a
+# disposable database even if application settings were imported earlier.
+config.set_main_option("sqlalchemy.url", os.getenv("ALEMBIC_DATABASE_URL") or settings.DATABASE_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

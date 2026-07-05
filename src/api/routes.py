@@ -56,18 +56,18 @@ def get_work(work_id: int, db: Session = Depends(get_db)):
     return work
 
 
-@router.post("/works", response_model=schemas.WorkReadFull)
-def create_work(work: schemas.WorkCreate, db: Session = Depends(get_db)):
+@router.post("/works", response_model=schemas.IngestionResult)
+def create_work(request: schemas.OpenAlexWorkIngestRequest, db: Session = Depends(get_db)):
     """
-    LEARNING: Create a new work.
-    
-    This is used during ingestion to add OpenAlex works to the database.
+    LEARNING: Keep work creation aligned with the ingestion service.
+
+    Phase 1 rule:
+    - works enter the database through OpenAlex ingestion, not direct ORM writes
+    - this preserves audit/error tracking and related entity synchronization
     """
-    db_work = Work(**work.model_dump())
-    db.add(db_work)
-    db.commit()
-    db.refresh(db_work)
-    return db_work
+    service = OpenAlexIngestionService(db)
+    result = service.ingest_work_by_openalex_id(request.openalex_id)
+    return schemas.IngestionResult(**result.__dict__)
 
 
 @router.get("/authors", response_model=list[schemas.AuthorRead])

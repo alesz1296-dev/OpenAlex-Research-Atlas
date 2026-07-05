@@ -8,9 +8,20 @@ python scripts/ingest_one_work.py W2741809807
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
 
-from src.database.session import SessionLocal
-from src.ingestion.openalex import OpenAlexIngestionService
+def _bootstrap_project_root() -> None:
+    """Make the project root importable for direct script execution."""
+    project_root = Path(__file__).resolve().parents[1]
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+
+_bootstrap_project_root()
+
+from src.database.session import SessionLocal  # noqa: E402
+from src.ingestion.openalex import OpenAlexIngestionService  # noqa: E402
 
 
 def main() -> None:
