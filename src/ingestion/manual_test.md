@@ -2,6 +2,11 @@
 
 This runbook is for learning the current one-work ingestion flow end to end.
 
+Session note:
+
+- If you are resuming after a pause, start here.
+- The goal of the next session is not new implementation first; it is manual validation and understanding of the Phase 1 system already built.
+
 ## 1. Start PostgreSQL with Docker
 
 Make sure Docker Desktop is running first, then from the project root run:

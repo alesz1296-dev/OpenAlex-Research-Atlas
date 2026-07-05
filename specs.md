@@ -4,6 +4,27 @@
 
 This file tracks the canonical features approved for implementation.
 
+## Spec-Driven Delivery Rules
+
+Each phase spec should define, at minimum:
+
+- goal
+- in-scope capabilities
+- implementation tasks or milestones
+- exit conditions
+- manual validation
+- automated validation
+
+The implementation order should be:
+
+1. phase goal and scope in `phases.md`
+2. detailed requirements and validation in `specs.md`
+3. executable tasks/checkpoints in `task.md`
+4. implementation
+5. validation evidence captured in `logs.md`
+
+No phase should be treated as complete until its exit conditions and validation checks are satisfied.
+
 ## 000 Project Foundation
 
 Status: active
@@ -168,6 +189,12 @@ All entities include:
 
 Phase 1 focuses on OpenAlex entities only. Local documents, chunks, embeddings, and evaluation records are deferred to Phase 2+.
 
+Current implementation checkpoint:
+
+- the first implementation slice uses one-work ingestion rather than paginated batch ingestion
+- PostgreSQL remains the primary execution target for both development and testing
+- retry classification and retry execution entry points exist, but full retry orchestration is deferred until manual validation is complete
+
 ### SQL Schema Design (Learning Exercise)
 
 You will:
@@ -262,6 +289,14 @@ Includes:
 - metadata filters
 - citation-aware document retrieval
 
+Initial implementation notes:
+
+- `POST /retrieval/search` exists as the first retrieval API contract.
+- The request accepts question, limit, optional publication-year bounds, and optional open-access filtering.
+- The response separates question, evidence, citations, and grounding_status.
+- The first retrieval implementation is keyword/filter retrieval over ingested OpenAlex works.
+- Semantic retrieval with `pgvector` remains the next Phase 2 expansion.
+
 ## 003 LangGraph Research Workflow
 
 Status: planned
@@ -293,6 +328,13 @@ Includes:
 - answer-grounding checks
 - regression tracking
 
+Initial implementation notes:
+
+- A local retrieval evaluation harness exists.
+- A seed eval dataset exists under `evals/`.
+- Default evaluation does not make Azure OpenAI calls.
+- Future expansion should add grounding and privacy-boundary datasets after cited-answer generation exists.
+
 ## 005 Observability Foundation
 
 Status: planned
@@ -300,7 +342,86 @@ Status: planned
 Goal:
 Track API requests, ingestion runs, LangChain call metadata, LangGraph execution records, retrieval traces, failures, latency, and evaluation history.
 
-## 006 Private Notes Integration
+Initial implementation notes:
+
+- `/metrics` exposes Prometheus metrics from the API.
+- Request count and latency are tracked by method, route, and status code.
+- Retrieval, Azure OpenAI, and evaluation counters exist.
+- Grafana is provisioned locally through Docker Compose.
+- Structured JSON logs include request IDs for API requests.
+
+## 006 Local Kubernetes and Helm
+
+Status: planned
+
+Goal:
+Run the platform locally on Kubernetes and package it with Helm while keeping the real Kubernetes objects visible for learning.
+
+Includes:
+
+- `kind` local cluster
+- raw Kubernetes manifests before Helm packaging
+- API Deployment and Service
+- PostgreSQL local Kubernetes deployment for learning
+- ConfigMaps and Secrets
+- Alembic migration Job
+- health and readiness probes
+- Helm chart, values, install, upgrade, rollback, and uninstall workflow
+
+## 007 Argo CD GitOps
+
+Status: planned
+
+Goal:
+Deploy the local Kubernetes stack through Argo CD so Git becomes the deployment source of truth.
+
+Includes:
+
+- local Argo CD installation
+- Argo CD Application manifest
+- Helm chart sync
+- GitOps diff, sync, rollback, and drift inspection
+
+## 008 AWS Terraform Low-Cost Deployment
+
+Status: planned
+
+Goal:
+Deploy the API to AWS through Terraform while keeping the default path close to free or low-cost.
+
+Includes:
+
+- ECR
+- GitHub Actions OIDC to AWS
+- Lambda container image plus API Gateway as the default runtime
+- CloudWatch logs
+- Terraform modules and environment values
+- smoke tests
+- teardown and cost guardrails
+- optional later ECS Fargate learning track
+
+Out of default scope:
+
+- EKS, because it is not close to free
+- always-on managed PostgreSQL until cost and persistence requirements are explicit
+
+## 009 CI/CD and Release Gates
+
+Status: planned
+
+Goal:
+Make local validation, Docker builds, Kubernetes checks, Helm checks, and Terraform checks repeatable in CI/CD.
+
+Includes:
+
+- GitHub Actions lint/test workflow
+- PostgreSQL-backed migration/test workflow
+- Docker image build validation
+- Helm template validation
+- Terraform format, validate, and plan checks
+- manual approval before cloud apply
+
+## 010 Private Notes Integration
 
 Status: planned
 
@@ -314,7 +435,7 @@ Includes:
 - privacy guarantees
 - git exclusion checks
 
-## 007 MCP Research Tools
+## 011 MCP Research Tools
 
 Status: planned
 
@@ -328,3 +449,20 @@ Includes:
 - cited summary generation
 - research workflow execution
 - evaluation run inspection
+
+## 012 Production Hardening
+
+Status: planned
+
+Goal:
+Harden the platform after the local Kubernetes, GitOps, CI/CD, and AWS Terraform paths exist.
+
+Includes:
+
+- authentication and authorization
+- secret handling
+- deployment rollback procedures
+- operational runbooks
+- observability review
+- production smoke tests
+- incident and recovery documentation

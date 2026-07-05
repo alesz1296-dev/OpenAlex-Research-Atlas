@@ -33,12 +33,28 @@ class Settings(BaseSettings):
     # API configuration
     API_TITLE: str = "OpenAlex Research Atlas"
     API_VERSION: str = "0.1.0"
+    API_REQUEST_ID_HEADER: str = "X-Request-ID"
 
     # OpenAlex ingestion configuration
     OPENALEX_BASE_URL: str = "https://api.openalex.org"
     OPENALEX_MAILTO: str | None = None
     OPENALEX_USER_AGENT: str = "OpenAlexResearchAtlas/0.1.0"
     OPENALEX_TIMEOUT_SECONDS: int = 30
+
+    # Logging
+    LOG_LEVEL: str = "INFO"
+
+    # Azure OpenAI inference configuration.
+    # Disabled by default so local tests and CI never make paid model calls.
+    AZURE_OPENAI_ENABLED: bool = False
+    AZURE_OPENAI_ENDPOINT: str | None = None
+    AZURE_OPENAI_API_KEY: str | None = None
+    AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
+    AZURE_OPENAI_CHAT_DEPLOYMENT: str | None = None
+    AZURE_OPENAI_TIMEOUT_SECONDS: int = 30
+    AZURE_OPENAI_MAX_RETRIES: int = 2
+    AZURE_OPENAI_TEMPERATURE: float = 0.0
+    AZURE_OPENAI_MAX_TOKENS: int = 800
 
     @field_validator("DEBUG", mode="before")
     @classmethod

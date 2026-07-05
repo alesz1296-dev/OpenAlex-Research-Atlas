@@ -35,7 +35,7 @@ LEARNING NOTES ON SQLALCHEMY:
 from datetime import datetime
 from sqlalchemy import (
     Column, Integer, String, Text, Float, Boolean, DateTime,
-    ForeignKey, UniqueConstraint, Index, JSON
+    ForeignKey, UniqueConstraint
 )
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship

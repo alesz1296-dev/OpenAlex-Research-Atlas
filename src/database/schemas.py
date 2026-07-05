@@ -285,6 +285,64 @@ class IngestionResult(ORMBaseModel):
     authors_synced: int
     topics_synced: int
     source_synced: bool
+
+
+# ==============================================================================
+# API FOUNDATION SCHEMAS
+# ==============================================================================
+
+class ErrorDetail(BaseModel):
+    """Normalized API error body."""
+    code: str
+    detail: object
+    request_id: Optional[str] = None
+
+
+class ErrorResponse(BaseModel):
+    """Top-level normalized API error response."""
+    error: ErrorDetail
+
+
+# ==============================================================================
+# RETRIEVAL AND AI CONTRACT SCHEMAS
+# ==============================================================================
+
+class RetrievalRequest(BaseModel):
+    """Request contract for evidence retrieval before generation."""
+    question: str = Field(..., min_length=3)
+    limit: int = Field(5, ge=1, le=20)
+    publication_year_min: Optional[int] = None
+    publication_year_max: Optional[int] = None
+    require_open_access: bool = False
+
+
+class CitationMetadata(BaseModel):
+    """Citation fields returned with retrieved evidence."""
+    openalex_id: str
+    title: str
+    doi: Optional[str] = None
+    source_url: Optional[str] = None
+    publication_year: Optional[int] = None
+
+
+class EvidenceItem(BaseModel):
+    """One retrieved scholarly evidence item."""
+    work_id: int
+    openalex_id: str
+    title: str
+    abstract: Optional[str] = None
+    publication_year: Optional[int] = None
+    citation_count: int
+    source_name: Optional[str] = None
+    citation: CitationMetadata
+
+
+class RetrievalResponse(BaseModel):
+    """Retrieval output used by later cited-answer generation."""
+    question: str
+    evidence: list[EvidenceItem]
+    citations: list[CitationMetadata]
+    grounding_status: str = "retrieval_only"
     
 # ==============================================================================
 # CITATION SCHEMAS

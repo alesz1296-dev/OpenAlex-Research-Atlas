@@ -144,6 +144,26 @@ class OpenAlexIngestionService:
             )
             raise
 
+        try:
+            summary = self._persist_work_graph(payload, ingestion_run.id)
+
+            ingestion_run.record_count = 1
+            ingestion_run.status = "completed"
+            ingestion_run.completed_at = datetime.utcnow()
+
+            self.db.commit()
+            return summary
+        except Exception as exc:
+            self.db.rollback()
+            self._persist_ingestion_error(
+                openalex_id=openalex_id,
+                ingestion_run_id=ingestion_run.id,
+                exc=exc,
+                payload=payload,
+                stage="persist",
+            )
+            raise
+
     def retry_ingestion_error(self, ingestion_error_id: int) -> IngestionSummary:
         """
         Retry a previously recorded ingestion error when it was classified as retryable.
@@ -167,26 +187,6 @@ class OpenAlexIngestionService:
             )
 
         return self.ingest_work_by_openalex_id(openalex_id)
-
-        try:
-            summary = self._persist_work_graph(payload, ingestion_run.id)
-
-            ingestion_run.record_count = 1
-            ingestion_run.status = "completed"
-            ingestion_run.completed_at = datetime.utcnow()
-
-            self.db.commit()
-            return summary
-        except Exception as exc:
-            self.db.rollback()
-            self._persist_ingestion_error(
-                openalex_id=openalex_id,
-                ingestion_run_id=ingestion_run.id,
-                exc=exc,
-                payload=payload,
-                stage="persist",
-            )
-            raise
 
     def _persist_ingestion_error(
         self,

@@ -19,6 +19,14 @@ python-dotenv==1.0.0
 
 # Logging and observability
 python-json-logger==2.0.7
+prometheus-client==0.19.0
+
+# AI inference and retrieval
+langchain==0.1.0
+langchain-openai==0.0.2
+
+# HTTP/testing support
+httpx==0.25.2
 
 # Testing
 pytest==7.4.3

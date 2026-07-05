@@ -43,3 +43,49 @@ Private notes live under `private/` and are intentionally excluded from git. The
 This project builds a production-grade OpenAlex research platform while privately supporting deep learning of LangChain, LangGraph, MCP, RAG, evaluation, and AI observability.
 
 The public repository should present the system as a serious scholarly research platform. Private local notes may document the academic learning process in more detail.
+
+## Production Infrastructure Roadmap
+
+The roadmap now treats infrastructure as explicit learning and implementation phases rather than hiding it inside general hardening:
+
+- local Docker and PostgreSQL during Phase 1
+- Prometheus and Grafana observability foundation during Phase 5
+- local Kubernetes and Helm during Phase 6
+- Argo CD GitOps during Phase 7
+- low-cost AWS Terraform deployment during Phase 8
+- CI/CD and release gates during Phase 9
+- private notes, MCP, and final production hardening after the platform and deployment paths are stable
+
+## Current Status
+
+- Phase 0 is complete.
+- Phase 1 implementation is largely in place:
+  - PostgreSQL schema and Alembic revisions
+  - SQLAlchemy ORM models
+  - one-work OpenAlex ingestion with explicit upsert behavior
+  - structured ingestion error tracking and retry classification
+  - PostgreSQL-backed pytest scaffolding
+  - Docker starter setup for local PostgreSQL
+- The first production API and AI-system foundation is now in place:
+  - FastAPI app entrypoint with health, readiness, version, and Prometheus metrics endpoints
+  - request IDs, structured JSON logging, normalized error responses, and pagination limits
+  - Azure OpenAI inference adapter behind a service boundary, disabled by default for CI/local safety
+  - retrieval-before-generation contracts for citation-ready evidence
+  - local retrieval evaluation harness with no paid model calls
+  - Docker Compose wiring for API, PostgreSQL, Prometheus, and Grafana
+- The main remaining Phase 1 work is live validation:
+  - apply migrations to a real PostgreSQL instance
+  - run one real OpenAlex ingestion
+  - inspect resulting rows manually
+  - run the PostgreSQL ingestion tests end to end
+
+## Delivery Model
+
+This repository follows spec-driven development:
+
+- phase goals and scope live in `phases.md`
+- canonical requirements and validation live in `specs.md`
+- implementation checkpoints live in `task.md`
+- completed work and validation evidence are recorded in `logs.md`
+
+Phases are not considered complete until their documented exit conditions and validation checks are satisfied.

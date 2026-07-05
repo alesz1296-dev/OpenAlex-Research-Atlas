@@ -174,6 +174,13 @@ The Phase 0 Software Design Document is defined in `specs.md` and defines the fo
 
 LangChain OpenAlex ingestion and database modeling.
 
+Current Phase 1 implementation note:
+
+- the current ingestion slice is intentionally one-work-at-a-time for learning and traceability
+- PostgreSQL is the primary database target
+- ingestion persists audit and failure records as first-class tables
+- retry execution now exists at the service layer, with full retry workflows deferred until after manual validation
+
 ### Phase 2
 
 LangChain retrieval and citation-aware academic search.

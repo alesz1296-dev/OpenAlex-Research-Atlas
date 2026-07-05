@@ -11,6 +11,28 @@ Before any meaningful implementation:
 - ensure the architecture impact is reflected in `architecture.md`
 - record notable session progress in `logs.md`
 
+## Spec-Driven Development Workflow
+
+Every phase should move through the same operating sequence:
+
+1. Define the phase goal and scope in `phases.md`.
+2. Record the canonical requirements, interfaces, and validation expectations in `specs.md`.
+3. Break implementation into concrete tasks and checkpoints in `task.md`.
+4. Implement only after the phase or stage has clear exit conditions.
+5. Validate the phase using the documented manual and automated checks.
+6. Record what was completed, what is pending, and any validation results in `logs.md`.
+
+For each phase or stage, the docs should answer:
+
+- what problem the phase solves
+- what is in scope and out of scope
+- what must exist before implementation starts
+- what artifacts or code must be produced
+- what conditions must be true to exit the phase
+- how the phase is validated manually and automatically
+
+Implementation should not outrun the written spec for long. If a design decision changes the intended behavior, update the Markdown source of truth in the same working session.
+
 ## LangChain and LangGraph Learning Standard
 
 LangChain is part of the implementation path from the first AI and retrieval workflows.
@@ -46,6 +68,8 @@ This summary style should be reflected in project documentation, issue updates, 
 - keep tasks scoped to one logical outcome
 - document assumptions explicitly
 - preserve the boundary between public repo artifacts and private local notes
+- define exit criteria before calling a phase or stage complete
+- keep validation criteria visible in the phase and task docs, not only in chat
 
 ## Private Notes Policy
 

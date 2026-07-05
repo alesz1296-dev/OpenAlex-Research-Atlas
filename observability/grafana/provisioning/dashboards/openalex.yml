@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: OpenAlex Research Atlas
+    orgId: 1
+    folder: OpenAlex Research Atlas
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

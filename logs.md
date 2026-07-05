@@ -105,6 +105,51 @@
   - `src/ingestion/manual_test.md`
 - Updated `.env.example` with `TEST_DATABASE_URL` for PostgreSQL-backed tests.
 
+### Session: Documentation sync before manual validation
+
+- Updated root project docs to reflect the current Phase 1 checkpoint.
+- Marked Phase 1 as implementation-complete enough to begin manual PostgreSQL validation.
+- Recorded that the next session should resume with the manual learning runbook and live database verification.
+
+## 2026-07-04
+
+### Session: Spec-driven development governance update
+
+- Strengthened the repo's spec-driven workflow so each phase now has:
+  - core tasks
+  - exit conditions
+  - manual validation expectations
+  - automated validation expectations
+- Updated `working-standard.md`, `phases.md`, `specs.md`, `task.md`, and `README.md` to make phase completion criteria explicit.
+- Added a phase-exit policy to `task.md` and a forward planning queue for Phases 2-8.
+
+### Session: AI production system foundation
+
+- Added the first production API foundation:
+  - FastAPI app entrypoint
+  - `/health`, `/ready`, `/version`, and `/metrics`
+  - request IDs, structured JSON logging, normalized error responses, and pagination bounds
+- Added Azure OpenAI as the first production inference target through a lazy, mockable service adapter.
+- Added retrieval-before-generation contracts and a keyword retrieval endpoint for citation-ready evidence.
+- Added a local retrieval evaluation harness and seed eval dataset that do not make paid model calls.
+- Added Prometheus and Grafana local observability wiring through Docker Compose.
+- Fixed the one-work ingestion control flow so fetched payloads are persisted again after the fetch step.
+- Validation:
+  - `python -m compileall src tests scripts` passed
+  - `ruff check .` passed
+  - `pytest -q` passed with 6 tests passing and 2 PostgreSQL integration tests skipped pending a configured database
+
+### Session: Production infrastructure roadmap correction
+
+- Updated the phase roadmap so production infrastructure is explicit rather than hidden under generic hardening.
+- Added dedicated phases for:
+  - local Kubernetes and Helm
+  - Argo CD GitOps
+  - AWS Terraform low-cost deployment
+  - CI/CD and release gates
+- Moved private notes, MCP, and final production hardening later in the roadmap.
+- Marked the configured PostgreSQL migration task as complete after the database reached Alembic revision `ccb7e9e6f18a`.
+
 ### Commit Log
 
 - No project commits recorded yet.
