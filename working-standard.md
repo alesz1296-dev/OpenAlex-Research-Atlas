@@ -39,7 +39,7 @@ LangChain is part of the implementation path from the first AI and retrieval wor
 
 LangGraph should be introduced early for stateful research workflows once retrieval can provide useful evidence.
 
-Private notes may document framework learning, mistakes, comparisons, and reflections. Public docs should describe architectural choices and production behavior without exposing private learning material.
+Private local material may document framework learning, mistakes, comparisons, and reflections. Public docs should describe architectural choices and production behavior without turning private notes into product scope.
 
 ## Markdown as Project Memory
 
@@ -71,11 +71,39 @@ This summary style should be reflected in project documentation, issue updates, 
 - define exit criteria before calling a phase or stage complete
 - keep validation criteria visible in the phase and task docs, not only in chat
 
-## Private Notes Policy
+## Architecture Discipline
 
-- Private notes are local-only working context.
-- Private notes may inform implementation and research direction.
-- Private notes must not be committed.
+Every implementation pass should preserve modularity, orthogonality, and clear ownership.
+
+Before adding or changing code, check:
+
+- which module owns the behavior
+- whether the change duplicates a business rule already implemented elsewhere
+- whether the API layer is staying thin
+- whether service modules remain independent of HTTP framework details
+- whether persistence models, API schemas, and external provider payloads remain separate contracts
+- whether cross-cutting concerns such as config, logging, metrics, and secrets stay in `src/core` or infrastructure-specific folders
+
+DRY rule:
+
+- Extract repeated business rules or repeated infrastructure policy.
+- Do not extract merely because two pieces of code look similar.
+- Keep separate models when they serve separate boundaries, such as ORM tables and Pydantic response contracts.
+
+Orthogonality rule:
+
+- Ingestion should not own retrieval behavior.
+- Retrieval should not own inference behavior.
+- AI provider adapters should not own API routing or database session lifecycle.
+- Evaluation should depend on stable service contracts, not hidden implementation details.
+- Deployment tooling should describe and run the platform, not redefine application behavior.
+
+## Private Material Policy
+
+- Private material is local-only working context.
+- Private material may inform implementation and research direction.
+- Private material must not be committed.
+- Private material is not a product feature, retrieval source, implementation phase, or public documentation deliverable.
 - Public docs should summarize conclusions without copying private note content.
 
 ## Production-Grade Expectations
@@ -84,6 +112,9 @@ Even in early phases, design for:
 
 - typed schemas
 - modular services
+- explicit module ownership
+- DRY business rules
+- orthogonal concerns
 - testability
 - structured logging
 - config separation
@@ -102,7 +133,7 @@ Manual testing should verify:
 - cited answer quality
 - LangGraph workflow behavior
 - observability records
-- private-note exclusion
+- private material exclusion from git
 
 Automated testing should verify:
 

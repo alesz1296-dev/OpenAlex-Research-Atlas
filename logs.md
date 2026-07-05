@@ -147,8 +147,43 @@
   - Argo CD GitOps
   - AWS Terraform low-cost deployment
   - CI/CD and release gates
-- Moved private notes, MCP, and final production hardening later in the roadmap.
+- Moved MCP and final production hardening later in the roadmap.
 - Marked the configured PostgreSQL migration task as complete after the database reached Alembic revision `ccb7e9e6f18a`.
+
+### Session: Architecture modularity and DRY review
+
+- Reviewed current architecture docs, phase docs, task tracker, source layout, and module dependencies.
+- Confirmed the current package layout is healthy for Phase 1:
+  - API
+  - core
+  - database
+  - ingestion
+  - retrieval
+  - AI provider adapter
+  - evaluation
+  - observability configuration
+- Added explicit architecture rules for DRY, orthogonality, module ownership, dependency direction, and contract separation.
+- Updated `architecture.md`, `working-standard.md`, `specs.md`, `phases.md`, and `task.md` so future phases must include architecture ownership checks before exit.
+- Recorded Phase 1 follow-up design risks:
+  - align Alembic/live PostgreSQL defaults with ORM and SQL reference expectations
+  - keep routes thin as retrieval grows
+  - avoid duplicated retrieval queries across API, AI, and evaluation layers
+  - revisit direct metrics imports during Phase 5 if observability calls spread too much
+
+### Session: Progressive CI/CD roadmap correction
+
+- Clarified that CI/CD should be implemented gradually rather than as a single late phase.
+- Updated Phase 1 to introduce the first CI checkpoint for lint, compile/import, PostgreSQL, Alembic, and ingestion tests.
+- Added CI/CD maturity notes to Phases 2-8 so retrieval, workflow, evaluation, observability, Kubernetes, Argo CD, and Terraform checks are added when those capabilities exist.
+- Reframed Phase 9 as CI/CD release gates and promotion rather than initial CI/CD implementation.
+- Updated `README.md`, `specs.md`, `phases.md`, `task.md`, `architecture.md`, and `logs.md`.
+
+### Session: Remove private notes as implementation phase
+
+- Removed Private Notes Integration as a standalone product phase.
+- Renumbered MCP Research Tools to Phase 10 and Production Hardening to Phase 11.
+- Updated design docs so private learning material remains local-only context, not a retrieval source, implementation track, or public documentation deliverable.
+- Kept only the repository safety boundary: private material must stay out of tracked project artifacts.
 
 ### Commit Log
 

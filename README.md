@@ -10,7 +10,7 @@ The system is intended to evolve from a local research platform into a deployed 
 - Use LangChain from the first implemented AI and retrieval workflows.
 - Introduce LangGraph early for stateful research workflows.
 - Build the project through specification-driven development.
-- Keep academic notes, reflections, and private references local and out of git.
+- Keep private learning material local and out of git.
 - Maintain architecture, tasks, specs, and logs as first-class project artifacts.
 
 ## Required Root Documents
@@ -30,7 +30,7 @@ These Markdown files are part of the project operating system and must stay curr
 
 ## Private Context
 
-Private notes live under `private/` and are intentionally excluded from git. They can contain:
+Private learning material is intentionally excluded from git and is not part of the product roadmap. It can include:
 
 - reading notes
 - paper summaries
@@ -40,9 +40,9 @@ Private notes live under `private/` and are intentionally excluded from git. The
 
 ## Initial Thesis
 
-This project builds a production-grade OpenAlex research platform while privately supporting deep learning of LangChain, LangGraph, MCP, RAG, evaluation, and AI observability.
+This project builds a production-grade OpenAlex research platform while supporting private local learning outside tracked project artifacts.
 
-The public repository should present the system as a serious scholarly research platform. Private local notes may document the academic learning process in more detail.
+The public repository should present the system as a serious scholarly research platform. Private local notes are personal context, not product functionality.
 
 ## Production Infrastructure Roadmap
 
@@ -53,8 +53,10 @@ The roadmap now treats infrastructure as explicit learning and implementation ph
 - local Kubernetes and Helm during Phase 6
 - Argo CD GitOps during Phase 7
 - low-cost AWS Terraform deployment during Phase 8
-- CI/CD and release gates during Phase 9
-- private notes, MCP, and final production hardening after the platform and deployment paths are stable
+- CI/CD added gradually across phases, then release gates and promotion during Phase 9
+- MCP and final production hardening after the platform and deployment paths are stable
+
+CI/CD is a progressive thread, not a single late implementation phase. Each phase adds the automation that matches the capability being built, and Phase 9 consolidates those checks into release promotion and approval workflows.
 
 ## Current Status
 

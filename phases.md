@@ -24,7 +24,7 @@ Scope:
 
 - Document project intent, architecture, and development rules.
 - Define the default stack and AI Reliability research slice.
-- Establish public/private note boundaries and git exclusion rules.
+- Establish private-material git exclusion rules.
 - Set the LangChain-first plus LangGraph-early project approach.
 - Capture manual and automated testing standards early.
 - Keep project docs as the source of truth for phase planning.
@@ -49,8 +49,9 @@ Use LangChain-compatible document abstractions while ingesting AI Reliability wo
 Operational sequencing for this phase:
 
 - Start with Dockerized local development for PostgreSQL and the application runtime.
-- Add CI after one-work ingestion, Alembic migrations, and the first ingestion-focused tests are stable enough to enforce in pull requests.
+- Add the first CI checkpoint after one-work ingestion, Alembic migrations, and the first ingestion-focused tests are stable enough to enforce in pull requests.
 - Close the phase only after manual PostgreSQL validation confirms ingestion, re-ingestion, and audit/error behavior.
+- Run an architecture check before exit to confirm ORM, Alembic, SQL reference, ingestion services, API routes, and tests still agree on ownership.
 
 Core tasks:
 
@@ -67,11 +68,13 @@ Exit conditions:
 - `ingestion_runs` and `ingestion_errors` capture expected audit behavior.
 - PostgreSQL-backed ingestion tests pass.
 - Manual validation confirms the stored rows match the intended schema and relationships.
+- Architecture review confirms no duplicated ingestion business rules across routes, scripts, and services.
 
 Validation:
 
 - Manual: follow `src/ingestion/manual_test.md` end to end.
 - Automated: run Alembic migrations plus the ingestion pytest suite against PostgreSQL.
+- CI/CD maturity: first GitHub Actions workflow for lint, compile/import checks, PostgreSQL service, Alembic upgrade, and ingestion tests.
 
 ## Phase 2: LangChain Retrieval Core
 
@@ -91,6 +94,7 @@ Core tasks:
 - Add embedding storage and retrieval-oriented metadata.
 - Implement keyword, metadata-filtered, and semantic retrieval.
 - Establish retrieval response contracts for evidence and citations.
+- Keep retrieval ranking, evidence construction, and citation formatting owned by retrieval services.
 
 Exit conditions:
 
@@ -98,11 +102,13 @@ Exit conditions:
 - Retrieval supports basic search, metadata filtering, and cited evidence output.
 - `pgvector`-backed semantic retrieval works on representative data.
 - Retrieval behavior is stable enough to support the first workflow layer.
+- API routes, AI services, and evaluation harnesses consume retrieval contracts instead of duplicating retrieval queries.
 
 Validation:
 
 - Manual: run representative scholarly queries and inspect returned evidence/citations.
 - Automated: retrieval tests for filters, ranking expectations, and vector storage contracts.
+- CI/CD maturity: add retrieval tests and pgvector/schema checks to the existing CI workflow once semantic retrieval lands.
 
 ## Phase 3: LangGraph Research Workflow
 
@@ -114,17 +120,20 @@ Core tasks:
 - Define workflow state, node transitions, and failure states.
 - Implement evidence retrieval, citation inspection, synthesis, and grounding checks.
 - Produce a cited response contract suitable for future UI/API use.
+- Keep workflow orchestration separate from retrieval ranking and provider-specific inference calls.
 
 Exit conditions:
 
 - A research question can move through the complete workflow state machine.
 - The workflow produces grounded, cited output using retrieval results.
 - Failures and partial states are observable and recoverable enough for iterative use.
+- LangGraph state owns orchestration while retrieval, inference, and evaluation remain separate modules.
 
 Validation:
 
 - Manual: execute representative research questions and inspect workflow traces.
 - Automated: LangGraph state transition tests and regression cases for grounded output.
+- CI/CD maturity: add deterministic workflow tests with mocked model calls; paid Azure OpenAI calls remain excluded from default CI.
 
 ## Phase 4: Evaluation
 
@@ -142,17 +151,20 @@ Core tasks:
 - Define evaluation datasets and scoring criteria.
 - Implement retrieval and grounding evaluation runs.
 - Track regressions across changes to retrieval and workflow behavior.
+- Keep evaluation scoring separate from retrieval and workflow implementation logic.
 
 Exit conditions:
 
 - Evaluation scenarios exist for retrieval, grounding, hallucination resistance, and privacy boundaries.
 - Evaluation runs can be repeated and compared across revisions.
 - The project has a usable baseline for future quality gates.
+- Evaluation code consumes public service/workflow contracts and does not depend on private implementation details.
 
 Validation:
 
 - Manual: inspect evaluation reports for representative scenarios.
 - Automated: repeatable evaluation scripts or tests that surface regressions.
+- CI/CD maturity: add cheap local evaluation smoke checks and regression thresholds once the metrics are stable.
 
 ## Phase 5: Observability
 
@@ -170,16 +182,19 @@ Core tasks:
 - Standardize structured logs and request/run identifiers.
 - Capture ingestion, retrieval, and workflow execution traces.
 - Record failure, latency, and evaluation history for debugging and review.
+- Centralize metrics and logging conventions so each service does not invent its own observability shape.
 
 Exit conditions:
 
 - Major platform actions emit traceable observability records.
 - A developer can reconstruct what happened during ingestion, retrieval, and workflow execution from stored records.
+- Observability remains a cross-cutting layer rather than business logic embedded in domain modules.
 
 Validation:
 
 - Manual: inspect logs and trace records from representative runs.
 - Automated: tests for required log fields or trace persistence hooks where practical.
+- CI/CD maturity: add metrics endpoint and structured logging contract checks.
 
 ## Phase 6: Local Kubernetes and Helm
 
@@ -194,6 +209,7 @@ Core tasks:
 - Add a Kubernetes migration job that runs Alembic against PostgreSQL.
 - Convert the working manifests into a Helm chart with explicit values.
 - Document local cluster creation, install, upgrade, rollback, and teardown.
+- Keep Kubernetes manifests and Helm values aligned with application environment contracts.
 
 Exit conditions:
 
@@ -201,11 +217,13 @@ Exit conditions:
 - Alembic migrations can run from inside the cluster.
 - The API is reachable through port-forwarding or an ingress-like local path.
 - The Helm chart can install, upgrade, and uninstall the stack without manual object edits.
+- Helm packages the Kubernetes deployment without hiding the underlying Kubernetes resources from review.
 
 Validation:
 
 - Manual: create a local cluster, deploy raw manifests, then deploy through Helm and smoke test `/health`, `/ready`, and `/metrics`.
 - Automated: render Helm templates and validate Kubernetes manifests where practical.
+- CI/CD maturity: add Kubernetes manifest validation and Helm template rendering checks.
 
 ## Phase 7: Argo CD GitOps
 
@@ -229,6 +247,7 @@ Validation:
 
 - Manual: sync the app through Argo CD, change a value, inspect diff, sync again, and verify the deployed API.
 - Automated: validate Argo CD Application manifests where practical.
+- CI/CD maturity: add Argo CD Application manifest validation, but keep sync/apply as a manual local workflow.
 
 ## Phase 8: AWS Terraform Low-Cost Deployment
 
@@ -264,19 +283,31 @@ Validation:
 
 - Manual: run `terraform fmt`, `terraform validate`, review `terraform plan`, apply to a sandbox account, smoke test, and destroy.
 - Automated: CI validates Terraform formatting and plans without applying by default.
+- CI/CD maturity: add Terraform format, validate, and plan checks; cloud apply requires explicit approval.
 
-## Phase 9: CI/CD and Release Gates
+## Phase 9: CI/CD Release Gates and Promotion
 
 Goal:
-Turn local validation, Docker builds, Kubernetes checks, and AWS deployment checks into repeatable CI/CD gates.
+Harden the CI/CD work accumulated across earlier phases into a coherent release and promotion system.
+
+CI/CD is not introduced here from scratch. It grows gradually:
+
+- Phase 1: lint, compile/import, PostgreSQL, Alembic, and ingestion tests.
+- Phase 2: retrieval and vector-store checks.
+- Phase 3: mocked LangGraph workflow checks.
+- Phase 4: local evaluation smoke checks.
+- Phase 5: observability contract checks.
+- Phase 6: Kubernetes and Helm validation.
+- Phase 7: Argo CD manifest validation.
+- Phase 8: Terraform validation and non-applying plans.
 
 Core tasks:
 
-- Add GitHub Actions for linting, compile/import checks, tests, and Alembic migration validation.
-- Add Docker image build validation.
-- Add Helm template validation.
-- Add Terraform format/validate/plan checks.
+- Consolidate existing GitHub Actions into clear CI, image, infrastructure, and release workflows.
+- Add release promotion rules for local, staging-like, and cloud targets.
+- Add branch/tag rules, environment approvals, and secret requirements.
 - Add controlled deployment workflows that require explicit approval for cloud apply.
+- Document rollback and failed-release handling.
 
 Exit conditions:
 
@@ -285,34 +316,14 @@ Exit conditions:
 - Docker image builds in CI.
 - Helm and Terraform checks run without applying infrastructure by default.
 - Cloud deployment requires explicit approval and documented environment variables/secrets.
+- Release promotion is documented and repeatable from a clean branch/tag.
 
 Validation:
 
 - Manual: inspect workflow output from a real branch or pull request.
 - Automated: GitHub Actions pass for lint, tests, migrations, Docker build, Helm validation, and Terraform validation.
 
-## Phase 10: Private Notes Integration
-
-Goal:
-Index local-only private notes for personal workflows while keeping them excluded from git and public exports.
-
-Core tasks:
-
-- Define local-only ingestion/indexing flow for private notes.
-- Add privacy gating so private notes are only used intentionally.
-- Validate git exclusion and public/private separation.
-
-Exit conditions:
-
-- Private notes can be indexed locally without entering tracked repo artifacts.
-- Public workflows remain safe from accidental private-note leakage by default.
-
-Validation:
-
-- Manual: add and query private notes locally while checking git status and retrieval boundaries.
-- Automated: tests for path exclusion and privacy gating logic.
-
-## Phase 11: MCP Research Tools
+## Phase 10: MCP Research Tools
 
 Goal:
 Expose selected search, lookup, synthesis, workflow, and evaluation capabilities through MCP.
@@ -333,7 +344,7 @@ Validation:
 - Manual: invoke MCP tools against representative research tasks.
 - Automated: contract tests for MCP tool input/output behavior.
 
-## Phase 12: Production Hardening
+## Phase 11: Production Hardening
 
 Goal:
 Add deployment, observability, authentication, and operational safety.

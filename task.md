@@ -8,6 +8,7 @@ Before a phase is marked complete, confirm:
 - exit conditions in `phases.md` are satisfied
 - manual validation has been performed and recorded
 - automated validation has been run where available
+- architecture ownership, DRY, and orthogonality have been reviewed
 - `logs.md` records what was completed, what remains, and the validation outcome
 
 ## Phase 0: Foundation (Complete)
@@ -44,13 +45,15 @@ Before a phase is marked complete, confirm:
 ## Next
 
 - Resume with manual validation of Phase 1 using `src/ingestion/manual_test.md`.
+- Add follow-up schema migration for DB defaults/nullability discovered during database review.
 - Test single-work ingestion against a real database.
 - Review one-work upsert behavior against real OpenAlex payloads and adjust any field mappings that are too sparse or too aggressive.
 - Validate Docker-based local development for PostgreSQL, API, Prometheus, and Grafana.
-- Define the first CI checkpoint: run Ruff, import/compile checks, Alembic migrations, and at least one ingestion-focused pytest test.
+- Review Phase 1 architecture ownership before exit: API routes, scripts, ingestion service, database schema, and SQL reference should agree.
+- Define and implement the first CI checkpoint: run Ruff, compile/import checks, Alembic migrations, and at least one ingestion-focused pytest test.
 - Define LangChain document mapping for OpenAlex works.
 - Define the first LangGraph research workflow state.
-- Define manual test scripts for ingestion, retrieval, workflow execution, and private-note exclusion.
+- Define manual test scripts for ingestion, retrieval, and workflow execution.
 - Define first API workflow.
 
 ## Later
@@ -64,17 +67,31 @@ Before a phase is marked complete, confirm:
 
 ## Phase-by-Phase Planning Queue
 
+### Progressive CI/CD Tracker
+
+- Phase 1 CI: lint, compile/import, PostgreSQL service, Alembic upgrade, ingestion tests.
+- Phase 2 CI: retrieval tests, metadata filter tests, vector-store checks.
+- Phase 3 CI: mocked LangGraph state transition and workflow tests.
+- Phase 4 CI: local evaluation smoke checks and stable regression thresholds.
+- Phase 5 CI: `/metrics` and structured logging contract checks.
+- Phase 6 CI: Kubernetes manifest validation and Helm template rendering.
+- Phase 7 CI: Argo CD Application manifest validation.
+- Phase 8 CI: Terraform fmt, validate, and non-applying plan.
+- Phase 9 CI/CD: release promotion, environment approvals, rollback documentation, cloud apply gates.
+
 ### Phase 2 Planning Tasks
 
 - Specify LangChain document mapping contracts for ingested works.
 - Specify retrieval interfaces, filters, and evidence output shape.
 - Define `pgvector` storage and embedding validation approach.
+- Define retrieval service ownership so API, AI, and evaluation code do not duplicate retrieval queries.
 - Define Phase 2 exit conditions and validation cases before implementation.
 
 ### Phase 3 Planning Tasks
 
 - Specify LangGraph workflow state and node contracts.
 - Define grounded response format and failure-handling behavior.
+- Define workflow dependency boundaries between retrieval, inference, grounding checks, and observability.
 - Define Phase 3 exit conditions and validation cases before implementation.
 
 ### Phase 4 Planning Tasks
@@ -87,6 +104,7 @@ Before a phase is marked complete, confirm:
 
 - Expand required observability records across ingestion, retrieval, Azure OpenAI calls, and workflows.
 - Define logging/tracing minimum fields and inspection workflow.
+- Decide whether direct Prometheus counter imports remain acceptable or whether a small observability facade is needed.
 - Define Phase 5 exit conditions and validation cases before implementation.
 
 ### Phase 6 Planning Tasks
@@ -110,24 +128,18 @@ Before a phase is marked complete, confirm:
 
 ### Phase 9 Planning Tasks
 
-- Specify GitHub Actions workflows for tests, Docker, Helm, and Terraform.
+- Specify release promotion workflows that consolidate existing tests, Docker, Helm, and Terraform checks.
 - Define deployment approval gates and required secrets.
 - Define Phase 9 exit conditions and validation cases before implementation.
 
 ### Phase 10 Planning Tasks
 
-- Specify local-only private note ingestion and privacy gating rules.
-- Define exclusion validation for git and public workflows.
+- Specify MCP tool surface, tool contracts, and response formats.
+- Define minimal safe tool set for first exposure.
 - Define Phase 10 exit conditions and validation cases before implementation.
 
 ### Phase 11 Planning Tasks
 
-- Specify MCP tool surface, tool contracts, and response formats.
-- Define minimal safe tool set for first exposure.
-- Define Phase 11 exit conditions and validation cases before implementation.
-
-### Phase 12 Planning Tasks
-
 - Specify deployment packaging, environment rules, and production safeguards.
 - Define CI/CD deployment gates and operational smoke tests.
-- Define Phase 12 exit conditions and validation cases before implementation.
+- Define Phase 11 exit conditions and validation cases before implementation.

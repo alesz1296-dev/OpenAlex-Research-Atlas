@@ -14,6 +14,7 @@ Each phase spec should define, at minimum:
 - exit conditions
 - manual validation
 - automated validation
+- architecture ownership and module boundaries when the phase introduces new components
 
 The implementation order should be:
 
@@ -25,12 +26,25 @@ The implementation order should be:
 
 No phase should be treated as complete until its exit conditions and validation checks are satisfied.
 
+## Architecture Quality Rules
+
+All phase specs must preserve these design qualities:
+
+- DRY by behavior: avoid duplicating business rules, provider policy, schema decisions, and deployment policy.
+- Orthogonality: keep ingestion, retrieval, inference, evaluation, observability, persistence, API, and deployment as independently understandable modules.
+- Explicit ownership: every new capability should have one clear home module or infrastructure folder.
+- Thin API boundary: HTTP routes should validate/delegate/serialize, while services own application behavior.
+- Contract separation: ORM models, Pydantic schemas, OpenAlex payloads, LangChain documents, evaluation cases, and Terraform/Kubernetes manifests should not collapse into one shared shape.
+- Infrastructure transparency: Docker, Kubernetes, Helm, Argo CD, AWS, Terraform, Prometheus, and Grafana should remain visible learning artifacts rather than hidden behind custom wrappers.
+
+Architecture checks should happen before closing each phase and should be recorded in `logs.md` when they produce decisions or follow-up tasks.
+
 ## 000 Project Foundation
 
 Status: active
 
 Goal:
-Establish the repository operating system, LangChain-first architecture baseline, logging model, private-note boundary, and project conventions.
+Establish the repository operating system, LangChain-first architecture baseline, logging model, private-material exclusion policy, and project conventions.
 
 Includes:
 
@@ -48,7 +62,7 @@ This section defines the Phase 0 Software Design Document for internal developer
 
 #### System Overview
 
-- Purpose: create a production-grade scholarly research platform built around OpenAlex, with LangChain-based ingestion and retrieval, early LangGraph workflows, and a strong boundary between public repo artifacts and local private notes.
+- Purpose: create a production-grade scholarly research platform built around OpenAlex, with LangChain-based ingestion and retrieval, early LangGraph workflows, and a clear rule that private learning material stays outside tracked project artifacts.
 - Scope:
   - define system intent and design principles
   - identify the first research domain slice: AI Reliability
@@ -65,14 +79,16 @@ This section defines the Phase 0 Software Design Document for internal developer
 - Define LangChain-compatible document abstractions for scholarly records and local notes.
 - Define retrieval behavior for search, filtering, citation-aware results, and semantic similarity.
 - Define the first LangGraph research workflow shape: question, evidence retrieval, citation inspection, synthesis, grounding validation, and cited response.
-- Define private note handling and the boundary between public and local-only data.
+- Define local-only material exclusion so private learning notes remain outside repository artifacts.
 
 #### Non-functional Requirements
 
 - The design must support testability through manual and automated checks.
 - The foundation must support observability for API requests, ingestion runs, LangChain calls, workflow transitions, and evaluation history.
-- The system must be designed to keep private notes out of git and prevent accidental public export.
+- The system must be designed to keep private learning material out of git.
 - The architecture must be modular and extensible for later phases.
+- The architecture must keep module ownership explicit and avoid duplicated business rules.
+- The design must keep storage, API, retrieval, inference, evaluation, observability, and deployment concerns orthogonal.
 
 #### Architecture and Component Boundaries
 
@@ -83,10 +99,11 @@ This section defines the Phase 0 Software Design Document for internal developer
   - LangGraph workflow service
   - evaluation service
   - observability/logging service
-  - private note indexer
 - Define boundaries between public and private content.
 - Define a LangChain-first path for AI workflows, with small adapters for raw provider access only when needed.
 - Define where LangGraph enters the architecture: after retrieval has matured enough to support a meaningful research workflow.
+- Define dependency direction so routes depend on services, services depend on database/core contracts, and infrastructure describes deployment without owning application behavior.
+- Keep OpenAlex normalization, retrieval ranking, AI inference, evaluation scoring, and observability policy in separate owners.
 
 #### Data Model and Storage Concepts
 
@@ -98,7 +115,7 @@ This section defines the Phase 0 Software Design Document for internal developer
 - Specify storage strategy:
   - PostgreSQL for structured metadata
   - `pgvector` for embeddings and semantic retrieval
-  - local file storage for cached payloads and private notes
+  - local file storage for cached payloads
 - Define provenance metadata for ingested records and local caches.
 
 #### Interface and Contract Definitions
@@ -108,7 +125,6 @@ This section defines the Phase 0 Software Design Document for internal developer
   - LangChain document loaders / retrievers
   - LangGraph workflow states and transitions
   - API request/response shape for future workflows
-  - privacy gating for private note inclusion
 - Capture contract-level requirements rather than full implementation signatures where appropriate.
 
 #### Workflow Definitions
@@ -116,20 +132,20 @@ This section defines the Phase 0 Software Design Document for internal developer
 - Ingestion workflow: query OpenAlex, normalize entities, store structured records, cache raw payloads.
 - Retrieval workflow: build LangChain-compatible retriever, support metadata filters, return evidence with citations.
 - Research workflow: accept question, retrieve evidence, inspect sources, synthesize answer, validate grounding.
-- Evaluation workflow: define metrics and test scenarios for retrieval quality, grounding, and private note exclusion.
+- Evaluation workflow: define metrics and test scenarios for retrieval quality and grounding.
 - Observability workflow: capture request IDs, execution metadata, errors, and trace information.
 
 #### Validation and Testing Plan
 
-- Document manual test scripts for ingestion, retrieval, workflow execution, private note exclusion, and observability.
+- Document manual test scripts for ingestion, retrieval, workflow execution, and observability.
 - Document automated test areas for schema contracts, ingestion idempotency, retrieval filters, vector storage, workflow transitions, and evaluation metrics.
 - Define success criteria for Phase 0 documentation and design readiness.
 
 #### Public / Private Boundary and Git Exclusion
 
-- The Phase 0 SDD must include explicit rules for private notes and excluded content.
-- Private notes should be kept inside `private/` and excluded from git.
-- Public docs should summarize architectural choices and design intent without exposing private learning materials.
+- The Phase 0 SDD must include explicit rules for excluded private learning material.
+- Private learning material should stay outside tracked project artifacts.
+- Public docs should summarize architectural choices and design intent without turning private notes into product scope.
 - `.gitignore` rules must be validated as part of Phase 0.
 
 #### Verification
@@ -194,6 +210,8 @@ Current implementation checkpoint:
 - the first implementation slice uses one-work ingestion rather than paginated batch ingestion
 - PostgreSQL remains the primary execution target for both development and testing
 - retry classification and retry execution entry points exist, but full retry orchestration is deferred until manual validation is complete
+- ingestion owns OpenAlex normalization and upsert behavior; API routes and scripts should call ingestion services rather than duplicate persistence rules
+- SQL reference material must be kept aligned with Alembic and live PostgreSQL behavior
 
 ### SQL Schema Design (Learning Exercise)
 
@@ -212,18 +230,25 @@ After schema design, you will:
 2. Define SQLAlchemy declarative models with relationships.
 3. Learn about session management and query patterns.
 
-### CI/CD for Phase 1
+### Progressive CI/CD
 
-From the start, plan:
+CI/CD should be implemented gradually. Each project phase adds the checks that match the capability introduced in that phase.
 
-1. Schema migrations using Alembic.
-2. Local testing with pytest in the same PostgreSQL-oriented environment used by development.
-3. Database reset scripts for development.
-4. Schema versioning and rollback strategy.
+The progression is:
+
+1. Phase 1: lint, compile/import checks, PostgreSQL service, Alembic migration execution, and ingestion tests.
+2. Phase 2: retrieval contract tests, filter/ranking tests, and vector-store checks.
+3. Phase 3: mocked LangGraph workflow checks and state transition tests.
+4. Phase 4: local evaluation smoke checks and stable regression thresholds.
+5. Phase 5: metrics endpoint, structured log, and observability contract checks.
+6. Phase 6: Kubernetes manifest and Helm template validation.
+7. Phase 7: Argo CD Application manifest validation.
+8. Phase 8: Terraform format, validate, and non-applying plan checks.
+9. Phase 9: release promotion, environment approval, rollback, and deployment governance.
 
 #### Delivery Order
 
-For this project, CI/CD should be introduced in two layers:
+For Phase 1 specifically, CI/CD should be introduced in two layers:
 
 1. **Docker first in Phase 1**:
    - containerize PostgreSQL and the application runtime for consistent local development
@@ -243,7 +268,7 @@ This order keeps CI meaningful. The pipeline should validate real project behavi
 Status: planned
 
 Goal:
-Establish continuous integration and deployment practices from Phase 1. Includes local development automation, testing, and deployment readiness.
+Establish the first continuous integration checkpoint from Phase 1. This is the start of CI/CD, not the entire final release system.
 
 Includes:
 
@@ -255,7 +280,7 @@ Includes:
 - environment configuration (.env.example)
 - Docker containerization for consistency
 - local development task automation
-- deployment pre-flight checks
+- early deployment pre-flight checks
 
 #### Phase 1 CI/CD Scope
 
@@ -273,6 +298,10 @@ You will:
 2. Learn Alembic for schema versioning
 3. Practice environment management and secrets handling
 4. Build reusable GitHub Actions workflows
+
+#### CI/CD Growth Rule
+
+Do not wait until a late phase to implement all automation. Add checks when the behavior exists and is worth enforcing. Phase 9 should consolidate and govern release promotion, not introduce basic CI for the first time.
 
 ## 002 LangChain Retrieval
 
@@ -296,6 +325,7 @@ Initial implementation notes:
 - The response separates question, evidence, citations, and grounding_status.
 - The first retrieval implementation is keyword/filter retrieval over ingested OpenAlex works.
 - Semantic retrieval with `pgvector` remains the next Phase 2 expansion.
+- Retrieval owns evidence ranking and citation-ready response construction; AI synthesis should consume retrieval output rather than re-querying the database independently.
 
 ## 003 LangGraph Research Workflow
 
@@ -334,6 +364,7 @@ Initial implementation notes:
 - A seed eval dataset exists under `evals/`.
 - Default evaluation does not make Azure OpenAI calls.
 - Future expansion should add grounding and privacy-boundary datasets after cited-answer generation exists.
+- Evaluation should depend on retrieval/workflow contracts and should not duplicate retrieval implementation details.
 
 ## 005 Observability Foundation
 
@@ -349,6 +380,7 @@ Initial implementation notes:
 - Retrieval, Azure OpenAI, and evaluation counters exist.
 - Grafana is provisioned locally through Docker Compose.
 - Structured JSON logs include request IDs for API requests.
+- Observability owns metrics/logging conventions; domain services may emit events or counters but should not grow custom metrics policy independently.
 
 ## 006 Local Kubernetes and Helm
 
@@ -368,6 +400,10 @@ Includes:
 - health and readiness probes
 - Helm chart, values, install, upgrade, rollback, and uninstall workflow
 
+Architecture rule:
+
+- Kubernetes and Helm describe deployment only. They must not redefine application configuration defaults that already belong in `.env.example`, settings, or documented environment contracts.
+
 ## 007 Argo CD GitOps
 
 Status: planned
@@ -381,6 +417,10 @@ Includes:
 - Argo CD Application manifest
 - Helm chart sync
 - GitOps diff, sync, rollback, and drift inspection
+
+Architecture rule:
+
+- Argo CD owns GitOps sync behavior only. It should consume the Helm chart and environment values rather than duplicate Kubernetes manifests.
 
 ## 008 AWS Terraform Low-Cost Deployment
 
@@ -400,42 +440,33 @@ Includes:
 - teardown and cost guardrails
 - optional later ECS Fargate learning track
 
+Architecture rule:
+
+- Terraform owns cloud resources and IAM policy. Application behavior remains in the Python service and container image.
+
 Out of default scope:
 
 - EKS, because it is not close to free
 - always-on managed PostgreSQL until cost and persistence requirements are explicit
 
-## 009 CI/CD and Release Gates
+## 009 CI/CD Release Gates and Promotion
 
 Status: planned
 
 Goal:
-Make local validation, Docker builds, Kubernetes checks, Helm checks, and Terraform checks repeatable in CI/CD.
+Consolidate the CI/CD checks built across earlier phases into a release promotion system with approval gates, rollback expectations, and cloud deployment governance.
 
 Includes:
 
-- GitHub Actions lint/test workflow
-- PostgreSQL-backed migration/test workflow
-- Docker image build validation
-- Helm template validation
-- Terraform format, validate, and plan checks
-- manual approval before cloud apply
+- CI workflow consolidation
+- release promotion workflow
+- environment approvals
+- branch/tag rules
+- cloud deployment approval
+- rollback workflow documentation
+- evidence that earlier checks still run before release
 
-## 010 Private Notes Integration
-
-Status: planned
-
-Goal:
-Allow local-only private notes to be indexed and used in personal research workflows without entering the public repository.
-
-Includes:
-
-- local-only notes ingestion
-- private retrieval collection
-- privacy guarantees
-- git exclusion checks
-
-## 011 MCP Research Tools
+## 010 MCP Research Tools
 
 Status: planned
 
@@ -450,7 +481,7 @@ Includes:
 - research workflow execution
 - evaluation run inspection
 
-## 012 Production Hardening
+## 011 Production Hardening
 
 Status: planned
 
