@@ -2,12 +2,17 @@
 
 ## System Purpose
 
-OpenAlex Research Atlas is a production-grade scholarly research intelligence platform that combines:
+OpenAlex Research Atlas is a production-minded scholarly research intelligence platform focused first on public OpenAlex metadata and citation-aware AI research workflows.
 
-- public scholarly metadata from OpenAlex
-- local enriched content such as abstracts, notes, and derived chunks
-- LangChain workflows for retrieval, synthesis, comparison, and evaluation
-- LangGraph workflows for stateful research processes
+The current product boundary is OpenAlex-first:
+
+- ingest and normalize public scholarly metadata from OpenAlex
+- retrieve citation-ready evidence from structured scholarly records
+- generate grounded research answers only after retrieval has produced evidence
+- measure retrieval, grounding, failures, latency, and regressions as first-class system behavior
+- keep deployment, CI/CD, metrics, dashboards, and operational checks visible as production learning artifacts
+
+Future local documents or public-safe enriched content may be added after the OpenAlex retrieval path is reliable. Private learning notes are not part of product retrieval, evaluation, deployment, or public documentation.
 
 ## Architectural Principles
 
@@ -19,8 +24,10 @@ OpenAlex Research Atlas is a production-grade scholarly research intelligence pl
 - API routes should stay thin and delegate business behavior to service modules.
 - Domain services should expose typed inputs and outputs rather than leaking raw framework details across boundaries.
 - OpenAlex is the external source of truth for scholarly metadata.
-- LangChain is part of the core architecture from the first implemented AI workflow.
-- LangGraph is introduced early once retrieval can support a meaningful research workflow.
+- LangChain supports document, retriever, embedding, and retrieval pipeline abstractions; it does not own application policy.
+- LangGraph owns workflow orchestration once retrieval can support a meaningful research process.
+- Azure OpenAI calls must stay behind inference service boundaries and must consume retrieved evidence rather than raw database rows.
+- Evaluation, observability, metrics, and CI/CD are production system requirements, not optional polish.
 - Private learning material is not a product feature and should not enter retrieval, evaluation, or deployment artifacts.
 
 ## Default Stack
@@ -35,11 +42,12 @@ OpenAlex Research Atlas is a production-grade scholarly research intelligence pl
 - External corpus: `OpenAlex API`
 - AI framework: `LangChain`
 - Agent and workflow framework: `LangGraph`
+- Production inference provider: `Azure OpenAI`
 - MCP layer: Python MCP server after the first retrieval workflow exists
 - Testing: `pytest` plus documented manual testing
-- Observability: structured logs, request IDs, LangChain run metadata, retrieval traces, LangGraph execution records, and eval run records
+- Observability: Prometheus, Grafana, structured logs, request IDs, retrieval traces, inference metrics, LangGraph execution records, and eval run records
 - Frontend: deferred until API and workflow shape are clear; likely `React` or `Next.js`
-- Deployment: Docker first, cloud deployment later
+- Deployment: Docker first, local Kubernetes/Helm and Argo CD next, low-cost AWS Terraform later
 
 ## High-Level Components
 
@@ -48,15 +56,28 @@ User
   -> Web UI / API Client
   -> API Service
   -> Application Services
-     -> LangChain OpenAlex Ingestion Service
-     -> LangChain Retrieval and Search Service
+     -> OpenAlex Ingestion Service
+     -> LangChain Retrieval and Evidence Service
      -> LangGraph Research Workflow Service
-     -> AI Synthesis Service
-     -> Evaluation Service
-     -> Observability Service
+     -> AI Inference Service
+     -> Evaluation Harness
+     -> Observability and Metrics
   -> PostgreSQL + pgvector
-  -> Local file storage for cached raw documents
+  -> Prometheus + Grafana
 ```
+
+## Production AI Architecture
+
+The system is intentionally layered so the LLM is never the source of truth.
+
+- Ingestion creates trustworthy, auditable scholarly records from OpenAlex.
+- Retrieval converts stored works into citation-ready evidence with provenance.
+- Inference consumes retrieval output and cites evidence; it should not query persistence directly.
+- LangGraph coordinates multi-step research workflows after retrieval and inference contracts are stable.
+- Evaluation measures retrieval quality, citation coverage, groundedness, unsupported claims, and regressions.
+- Observability records request IDs, ingestion runs, retrieval latency, inference calls, token usage, workflow failures, eval runs, and dashboard-visible metrics.
+
+The production direction is retrieval-before-generation. If retrieval cannot produce stable evidence, the system should return a retrieval or grounding status that makes that limitation explicit instead of producing an unsupported answer.
 
 ## Module Boundaries
 
@@ -66,11 +87,11 @@ The codebase should preserve these module responsibilities as it grows:
 - `src/core`: cross-cutting configuration, logging, request IDs, and metrics setup.
 - `src/database`: SQLAlchemy models, database sessions, Alembic migrations, and SQL reference material.
 - `src/ingestion`: OpenAlex fetch/normalize/upsert workflow and ingestion retry behavior.
-- `src/retrieval`: retrieval services and evidence/citation response construction.
-- `src/ai`: provider adapters and inference services, including Azure OpenAI boundaries.
-- `src/evaluation`: local evaluation harnesses and scoring logic.
+- `src/retrieval`: LangChain document mapping, retriever composition, evidence ranking, filters, and citation-ready response construction.
+- `src/ai`: provider adapters, inference prompts, Azure OpenAI configuration, token/call metrics, and model-call policy.
+- `src/evaluation`: local evaluation datasets, scoring logic, regression harnesses, and evaluation run contracts.
 - `scripts`: runnable developer workflows that compose services without owning business rules.
-- `observability`: Prometheus and Grafana configuration, dashboards, and future telemetry setup.
+- `observability`: Prometheus scrape configuration, Grafana provisioning, dashboards, and future OpenTelemetry setup.
 
 Dependency direction should stay mostly one-way:
 
@@ -89,11 +110,32 @@ DRY should protect meaning, not erase useful separation. Similar-looking code ma
 
 Use these rules:
 
-- Prefer one owner for one concept: OpenAlex normalization belongs in ingestion, citation-ready evidence belongs in retrieval, model calls belong in AI services, metrics setup belongs in core/observability.
+- Prefer one owner for one concept: OpenAlex normalization belongs in ingestion, citation-ready evidence belongs in retrieval, model calls belong in AI services, scoring belongs in evaluation, and metrics policy belongs in core/observability.
 - Avoid duplicated business decisions across routes, scripts, and tests. If a rule affects behavior, put it in a service and test it there.
 - Keep infrastructure concerns explicit: Docker, Kubernetes, Helm, Argo CD, Terraform, and CI/CD should be documented and implemented as real tools, not hidden behind generic wrappers.
 - Do not introduce broad helper layers just to reduce a few repeated lines; add abstractions when they remove real coupling or repeated decisions.
 - Keep public/private boundaries orthogonal to retrieval and AI behavior. Private learning material must stay outside public OpenAlex workflows.
+
+## LangChain and LangGraph Ownership
+
+LangChain is a framework dependency inside the retrieval and AI workflow path, not the owner of the application architecture.
+
+LangChain owns:
+
+- `Document` abstractions for retrieval-ready scholarly records
+- retriever composition and retrieval pipeline primitives
+- embedding interfaces and vector-store integrations
+- future chain components that consume stable retrieval contracts
+
+Project services own:
+
+- OpenAlex normalization and refresh policy
+- ranking policy, filters, evidence construction, and citation metadata
+- API request/response contracts
+- provenance, audit records, and database persistence
+- evaluation scoring and observability policy
+
+LangGraph owns workflow state and orchestration once Phase 3 begins. Its nodes should call retrieval, inference, evaluation, and observability services rather than reimplementing their behavior. LangGraph may coordinate retries, partial states, and failure transitions, but it should not own retrieval ranking, model provider details, or evaluation scoring.
 
 ## Current Architecture Review Notes
 
@@ -126,8 +168,7 @@ Initial topics include:
 - topics
 - sources
 - citations
-- local documents
-- document chunks
+- public-safe document chunks
 - embeddings
 - evaluation runs
 - research sessions
@@ -146,6 +187,7 @@ Initial topics include:
 
 - cached API payloads
 - optional PDFs or exported text
+- public-safe derived artifacts after ingestion and retrieval policy exists
 
 ## Boundary Between Public Repo and Private Learning
 
@@ -173,7 +215,11 @@ Private material is local context only. It is not an indexed product data source
 
 ## AI Workflow Strategy
 
-LangChain is the default implementation path for AI-facing workflows. Raw provider calls may exist only behind small adapters for testing, mocking, or comparison, but they should not become the main application path.
+The AI workflow strategy is evidence-first. Retrieval must produce structured evidence and citation metadata before answer generation.
+
+LangChain should first appear through document mapping and retrievers. Raw provider calls may exist only behind small adapters for testing, mocking, or comparison, but they should not become the main application path.
+
+Azure OpenAI is the first production inference provider. API routes and LangGraph nodes should call an inference service, not provider SDKs directly.
 
 The first LangGraph workflow should follow this shape:
 
@@ -193,20 +239,29 @@ Evaluation and observability are core AI engineering topics in this project, not
 Evaluation must cover:
 
 - retrieval quality
+- expected-work hits
+- citation coverage
 - answer grounding
+- unsupported-claim detection
 - hallucination resistance
+- privacy-boundary checks
 - workflow regressions
 
 Observability must cover:
 
 - API request IDs
 - ingestion runs
-- LangChain call metadata
+- retrieval latency and result counts
+- Azure OpenAI calls, failures, and token usage
+- LangChain call metadata where useful
 - LangGraph node transitions
 - retrieval traces
 - latency and failures
 - token and cost estimates when available
 - evaluation run history
+- Grafana dashboards for local inspection
+
+Prometheus and Grafana are the first concrete observability stack. OpenTelemetry can be added after metrics and logs are stable. LangSmith may be added later as optional LangChain trace tooling, but default CI and local validation should not depend on paid or hosted tracing.
 
 ## Evolution Path
 
@@ -218,30 +273,31 @@ The Phase 0 Software Design Document is defined in `specs.md` and defines the fo
 
 ### Phase 1
 
-LangChain OpenAlex ingestion and database modeling.
+OpenAlex ingestion and database modeling.
 
-Current Phase 1 implementation note:
+Current Phase 1 status:
 
 - the current ingestion slice is intentionally one-work-at-a-time for learning and traceability
 - PostgreSQL is the primary database target
 - ingestion persists audit and failure records as first-class tables
-- retry execution now exists at the service layer, with full retry workflows deferred until after manual validation
+- retry execution exists at the service layer
+- real ingestion, re-ingestion, Docker stack validation, PostgreSQL-backed tests, CI, and architecture ownership review are satisfied
 
 ### Phase 2
 
-LangChain retrieval and citation-aware academic search.
+LangChain document mapping, retrieval contracts, metadata filters, citation-aware evidence, and `pgvector` semantic retrieval. Phase 2 begins with `Work -> LangChain Document` mapping before embeddings.
 
 ### Phase 3
 
-LangGraph research workflow for grounded synthesis, comparison, and question answering.
+LangGraph research workflow over retrieval, inference, evaluation, and observability services. LangGraph owns orchestration, not domain policy.
 
 ### Phase 4
 
-Evaluation workflows and research quality controls.
+Evaluation workflows and research quality controls for retrieval, citation coverage, groundedness, unsupported claims, privacy boundaries, and regressions.
 
 ### Phase 5
 
-Observability for API, ingestion, retrieval, LangChain calls, LangGraph workflows, and eval runs.
+Production observability for API, ingestion, retrieval, Azure OpenAI calls, token usage, LangChain traces where useful, LangGraph workflows, eval runs, Prometheus metrics, and Grafana dashboards.
 
 ### Phase 6
 

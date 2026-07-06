@@ -24,6 +24,9 @@ def test_azure_inference_service_can_be_mocked_without_remote_call():
             publication_year=2025,
             citation_count=3,
             source_name="Journal",
+            author_names=["A. Researcher"],
+            topic_names=["Retrieval"],
+            matched_fields=["title"],
             citation=CitationMetadata(
                 openalex_id="https://openalex.org/W1",
                 title="Reliable Retrieval",

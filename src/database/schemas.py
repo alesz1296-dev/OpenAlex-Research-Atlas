@@ -314,6 +314,17 @@ class RetrievalRequest(BaseModel):
     publication_year_min: Optional[int] = None
     publication_year_max: Optional[int] = None
     require_open_access: bool = False
+    work_type: Optional[str] = None
+    language: Optional[str] = None
+
+
+class RetrievalAppliedFilters(BaseModel):
+    """Normalized record of which retrieval filters were applied."""
+    publication_year_min: Optional[int] = None
+    publication_year_max: Optional[int] = None
+    require_open_access: bool = False
+    work_type: Optional[str] = None
+    language: Optional[str] = None
 
 
 class CitationMetadata(BaseModel):
@@ -334,14 +345,21 @@ class EvidenceItem(BaseModel):
     publication_year: Optional[int] = None
     citation_count: int
     source_name: Optional[str] = None
+    author_names: list[str] = []
+    topic_names: list[str] = []
+    retrieval_score: Optional[float] = None
+    matched_fields: list[str] = []
     citation: CitationMetadata
 
 
 class RetrievalResponse(BaseModel):
     """Retrieval output used by later cited-answer generation."""
     question: str
+    retrieval_method: str = "keyword"
+    filters_applied: RetrievalAppliedFilters
     evidence: list[EvidenceItem]
     citations: list[CitationMetadata]
+    result_count: int
     grounding_status: str = "retrieval_only"
     
 # ==============================================================================

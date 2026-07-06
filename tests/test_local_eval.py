@@ -11,6 +11,7 @@ class FakeRetrievalService:
         )
         return RetrievalResponse(
             question=request.question,
+            filters_applied={},
             evidence=[
                 EvidenceItem(
                     work_id=1,
@@ -20,10 +21,14 @@ class FakeRetrievalService:
                     publication_year=2025,
                     citation_count=10,
                     source_name=None,
+                    author_names=["A. Researcher"],
+                    topic_names=["Retrieval"],
+                    matched_fields=["title"],
                     citation=citation,
                 )
             ],
             citations=[citation],
+            result_count=1,
         )
 
 

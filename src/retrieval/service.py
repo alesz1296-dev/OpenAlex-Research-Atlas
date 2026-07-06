@@ -29,8 +29,17 @@ class RetrievalService:
             RETRIEVAL_REQUESTS_TOTAL.labels("success").inc()
             return schemas.RetrievalResponse(
                 question=request.question,
+                retrieval_method="keyword",
+                filters_applied=schemas.RetrievalAppliedFilters(
+                    publication_year_min=request.publication_year_min,
+                    publication_year_max=request.publication_year_max,
+                    require_open_access=request.require_open_access,
+                    work_type=request.work_type,
+                    language=request.language,
+                ),
                 evidence=evidence,
                 citations=[item.citation for item in evidence],
+                result_count=len(evidence),
                 grounding_status="retrieval_only",
             )
         except Exception:
@@ -43,7 +52,7 @@ class RetrievalService:
         pattern = f"%{request.question.strip()}%"
         query = (
             self.db.query(Work)
-            .options(joinedload(Work.source))
+            .options(joinedload(Work.source), joinedload(Work.authors), joinedload(Work.topics))
             .filter(or_(Work.title.ilike(pattern), Work.abstract.ilike(pattern)))
         )
 
@@ -53,16 +62,20 @@ class RetrievalService:
             query = query.filter(Work.publication_year <= request.publication_year_max)
         if request.require_open_access:
             query = query.filter(Work.open_access.is_(True))
+        if request.work_type is not None:
+            query = query.filter(Work.work_type == request.work_type)
+        if request.language is not None:
+            query = query.filter(Work.language == request.language)
 
         works = (
             query.order_by(Work.citation_count.desc(), Work.publication_year.desc().nullslast())
             .limit(request.limit)
             .all()
         )
-        return [self._to_evidence_item(work) for work in works]
+        return [self._to_evidence_item(work, request.question) for work in works]
 
     @staticmethod
-    def _to_evidence_item(work: Work) -> schemas.EvidenceItem:
+    def _to_evidence_item(work: Work, question: str) -> schemas.EvidenceItem:
         citation = schemas.CitationMetadata(
             openalex_id=work.openalex_id,
             title=work.title,
@@ -70,6 +83,12 @@ class RetrievalService:
             source_url=work.source_url,
             publication_year=work.publication_year,
         )
+        normalized_question = question.strip().lower()
+        matched_fields = []
+        if normalized_question and work.title and normalized_question in work.title.lower():
+            matched_fields.append("title")
+        if normalized_question and work.abstract and normalized_question in work.abstract.lower():
+            matched_fields.append("abstract")
         return schemas.EvidenceItem(
             work_id=work.id,
             openalex_id=work.openalex_id,
@@ -78,5 +97,9 @@ class RetrievalService:
             publication_year=work.publication_year,
             citation_count=work.citation_count or 0,
             source_name=work.source.name if work.source else None,
+            author_names=[author.name for author in work.authors if author.name],
+            topic_names=[topic.name for topic in work.topics if topic.name],
+            retrieval_score=None,
+            matched_fields=matched_fields,
             citation=citation,
         )
