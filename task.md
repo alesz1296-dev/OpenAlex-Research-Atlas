@@ -56,6 +56,14 @@ Before a phase is marked complete, confirm:
 - Define manual test scripts for ingestion, retrieval, and workflow execution.
 - Define first API workflow.
 
+## Phase 2 Progress Notes
+
+- `P2-01`: `Work -> LangChain Document` mapper implemented.
+- `P2-02`: retrieval request/response contract expanded with filters, result counts, and richer evidence fields.
+- `P2-03`: retrieval service tests added for ranking and filter behavior.
+- `P2-04`: ownership review completed for API, evaluation, and inference; inference should consume the full `RetrievalResponse`.
+- `P2-05`: retrieval manual runbook added for keyword, year filter, open-access filter, and citation inspection.
+
 ## Later
 
 - Close Phase 1 after successful manual validation and PostgreSQL-backed test execution.

@@ -219,3 +219,16 @@
 ### Commit Log
 
 - No project commits recorded yet.
+
+## 2026-07-12
+
+### Session: Phase 2 retrieval manual validation runbook
+
+- Added a dedicated Phase 2 retrieval manual runbook:
+  - `src/retrieval/manual_test.md`
+- Covered the first manual retrieval checks for:
+  - keyword query
+  - publication year filter
+  - open-access filter
+  - citation inspection
+- Recorded the current Phase 2 progress notes in `task.md` so retrieval contract work, service tests, ownership review, and manual validation artifacts stay visible together.
